@@ -1991,7 +1991,7 @@ def main():
 
     my_MD_simulation.hydrate(number_of_water = 150)
 
-    # my_MD_simulation.visualize()
+    my_MD_simulation.visualize()
     
 #############################################################################################################################
     
@@ -2035,7 +2035,7 @@ def main():
         my_MD_simulation.times.append(t)
         my_MD_simulation.update_energies()
 
-        # visual.update_visual()
+        visual.update_visual()
 
         # t = protein_one.amino_acids[0].save_residue_positions(t, tf)
 
@@ -2059,7 +2059,7 @@ def main():
                 
         t += dt
 
-        # vis.rate(30) 
+        vis.rate(30) 
 
     my_MD_simulation.print_final_positions(name = str('This_is_a_test_image'))
     # my_MD_simulation.graph_energy_conservation( save_image = True)
