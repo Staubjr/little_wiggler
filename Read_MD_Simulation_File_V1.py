@@ -132,6 +132,9 @@ def main():
     
     display = True
 
+    disp = vis.scene()
+    disp.foreground = [1,1,1]
+
     while display == True:
         vis.rate(30)
 

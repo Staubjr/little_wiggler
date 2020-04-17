@@ -1,4 +1,4 @@
-!/usr/bin/env python3
+#/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 Created on Fri Sep 27 14:16:57 2019
@@ -151,7 +151,7 @@ class atom:
         self.atom_number = atom_number
         self.molecule = molecule
         self.element_type = element_type
-        self.charge = atom.charges[self.element_type]
+        # self.charge = atom.charges[self.element_type]
         self.potential = potential
         self.force = np.zeros(3)
         self.bonds = []
@@ -888,7 +888,6 @@ def main():
     Time_Unit = ( (1.66054E-27 * 1E-20) / (1.60218E-19) )**(1/2)
     Epsilon = ( ( 1.60218E-19)**2 * (Time_Unit)**2 ) / ( (1E-10)**3 * (1.66054E-27) )
     print('Time Units (seconds): {} and Epsilon: {}'.format(Time_Unit, Epsilon))
-    sys.exit(20)
 
     
     s70 = math.sin(70/180 * math.pi)

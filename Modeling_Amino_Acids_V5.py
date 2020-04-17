@@ -41,18 +41,18 @@ Resdiue_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/Residue_Equil
 CHARMM_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/CHARRM_FILES/'
 
 def mag(vector):
-    ''' Returns the magnitude of a vector '''
+    """ Returns the magnitude of a vector """
     mag_vec = math.sqrt(vector[0]**2 + vector[1]**2 + vector[2]**2)
     return mag_vec
 
 def unit_vector(vector):
-    ''' Returns the unit vector of a vector '''
+    """ Returns the unit vector of a vector """
     mag_vec = mag(vector)
     uv = vector/mag_vec
     return uv
 
 def cross_product(vector1, vector2):
-    ''' Takes the cross product of 2 1X3 matricies '''
+    """ Takes the cross product of 2 1X3 matricies """
     result_x = (vector1[1]*vector2[2] - vector1[2]*vector2[1])
     result_y = (vector1[2]*vector2[0] - vector1[0]*vector2[2])
     result_z = (vector1[0]*vector2[1] - vector1[1]*vector2[0])
@@ -60,7 +60,7 @@ def cross_product(vector1, vector2):
     return result
 
 def spherical_coordinate_conversion_matrix(vector):
-    '''Converts a vector from Cartesian to Spherical coordinates'''
+    """ Converts a vector from Cartesian to Spherical coordinates """
     r = ( (vector[0]**2) + (vector[1]**2) + (vector[2]**2) )**(1/2)
     theta = math.atan( ( (vector[0]**2) + (vector[1]**2) )**(1/2)/vector[2] )
     phi = math.atan(vector[1]/vector[0])
@@ -68,7 +68,7 @@ def spherical_coordinate_conversion_matrix(vector):
     return atom_pos_spherical
 
 def cartesian_coordinate_conversion_matrix(r, theta, phi):
-    '''Converts a vector from Spherical to Cartesian coordinates'''
+    """ Converts a vector from Spherical to Cartesian coordinates """
     x = r*math.sin(phi)*math.cos(theta)
     y = r*math.sin(phi)*math.sin(theta)
     z = r*math.cos(phi)
@@ -77,6 +77,10 @@ def cartesian_coordinate_conversion_matrix(r, theta, phi):
            
 def ders(t, y):
 
+    """ Ders function used in scipy.integrate.ode to calculate the 
+        accelerations of all of the atoms based on forces due to the 
+        different potential terms """
+    
     vals[:] = y
     
     for mol in molecule.all_molecules:
@@ -113,7 +117,10 @@ def ders(t, y):
 
 
     
-    """ Get the accelerations in dvals """
+    """ Get the accelerations in dvals for any atom to go outside the specified boundary.
+        This also accounts of the work that is done by the boundary, which is approimated
+        as many stiff springs.  """
+    
     vindex = 3*len(dvals)//7
     windex = 6*len(dvals)//7
     
@@ -158,37 +165,43 @@ class simulation():
 
     This class does the following things:
     
-    1.) update_energies: Calculates the instananeous potential energy and kinetic energy
+    1.) initialize_CHARMM_Values: Initializes program by reading values from the modified CHARRM
+                                  file produced using Read_Residue_Data_File.py.  This assigns
+                                  all necessary constants for each specific bond, bond angle,
+                                  dihedral, and lennard-jones pair.  All electrostatic terms are
+                                  constant and fixed in the electrostatic class. 
+
+    2.) update_energies: Calculates the instananeous potential energy and kinetic energy
                          of the system as well as the work done by the viscous fluid and
                          'squishy sphere' boundary if True. Values for instantaneous 
                          potential, kinetic energy, and total energy are appended to lists
                          of values over time. Resets instantaneous class attributes for 
                          potential energy, kinetic energy, and work at the end.
 
-    2.) visualize: If called, creates an instance of the visual classes for all bonds and 
+    3.) visualize: If called, creates an instance of the visual classes for all bonds and 
                    atoms in the molecules in the class list molecules.
 
-    3.) graph_energy_conservation: Uses matplotlib to create a plot with three subplots:
+    4.) graph_energy_conservation: Uses matplotlib to create a plot with three subplots:
                                    total energy and work, total energy plus work, and potential
                                    and kinetic energy with repsect to time. If save image == True,
                                    creates SVG file with hardcoded title in current directory.
 
-    4.) get_potential: After reseting class attribute potential_energy to 0, calculates the potential
+    5.) get_potential: After reseting class attribute potential_energy to 0, calculates the potential
                        in the molecules in class list molecules due to lennard-jones pairs, electrostatic
                        pairs, bonds, bond angles, and dihedrals. 
 
-    5.) get_kinetic_energy: After reseting class attriute kinetic_energy to 0, calculates the kinetic
+    6.) get_kinetic_energy: After reseting class attriute kinetic_energy to 0, calculates the kinetic
                             energy of all of the molecules in the class list molecules.
 
-    6.) get_work: For all atoms in molecules in class list molecule, add all the works done by the atoms
+    7.) get_work: For all atoms in molecules in class list molecule, add all the works done by the atoms
                   in the time step to the class attribute work. Also, add the value to the class 
                   attribute total_work.
 
-    7.) hydrate: Randomly adds water to the simulation. The function only if by adding the water to the 
+    8.) hydrate: Randomly adds water to the simulation. The function only if by adding the water to the 
                  simulation, the potential does not increase by a large hardcoded value.  This function 
                  randomly makes water molecules inside the sphere and randomly rotates them usnig Scipy.
 
-    8.) print_final_positions: Print final positions of all atoms in all molecules in class list molecule. 
+    9.) print_final_positions: Print final positions of all atoms in all molecules in class list molecule. 
                                Also, print the atoms bonded to each other by atom index as well as element
                                type. 
     """
@@ -820,7 +833,8 @@ class molecule():
                 
                 specific_dihedral.dihedral_force()
                 
-        """ Lennard Jones Forces """
+        """ Lennard Jones Forces :
+            Not calculated here. Calculated in ders function.  """
                 
         # for specific_atom in self.atoms:
 
@@ -836,7 +850,8 @@ class molecule():
         #             specific_lennard_jones_pair.atom2.force += forces[1]
         #             specific_lennard_jones_pair.atom2_force_counted = True
 
-        """ Electrostatic Potential Forces """
+        """ Electrostatic Potential Forces :
+            Not calculated here. Calculated in ders function. """
         
         # for specific_atom in self.atoms:
         #     for specific_electrostatic_pair in electrostatic.all_electrostatic_pairs:
