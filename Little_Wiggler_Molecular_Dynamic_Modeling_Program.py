@@ -2068,6 +2068,61 @@ def main():
 
     # my_MD_simulation.hydrate(number_of_water = 10)
 
+    s70 = math.sin(70/180 * math.pi)
+    c70 = math.cos(70/180 * math.pi)
+    s120 = math.sin(120/180 * math.pi)
+    c120 = math.cos(120/180 * math.pi)
+    s20 = math.sin(20/180 * math.pi)
+    c20 = math.cos(20/180 * math.pi)
+
+    l0 = 1.530
+    l1 = 1.111
+    h_bond = l1 * (1/2)**(1/2)
+
+    h1pos = np.array( [ -l1*c70, -l1*s70, 0. ] )
+    h2pos = np.array( [ -l1*c70, -l1*s70*c120, l1*s70*s120 ] )
+    h3pos = np.array( [ -l1*c70, -l1*s70*c120, -l1*s70*s120 ] )
+
+    crotang = math.cos( 20./180. * math.pi)
+    srotang = math.sin( 20./180. * math.pi)
+    rotmat = np.array( [ [ 1.,  0.,      0.      ],
+                         [ 0., crotang, -srotang,],
+                         [ 0., srotang,  crotang ]
+                         ] )
+    h1pos = np.matmul(rotmat, h1pos)
+    h2pos = np.matmul(rotmat, h2pos)
+    h3pos = np.matmul(rotmat, h3pos)
+
+    
+    global vals
+    
+    c_1 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 1, y0 =  l0/2)
+    c_2 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 2, y0 =  l0 * s20, x0 =  l0 * c20)
+    c_3 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 3, y0 = -l0 * s20, x0 =  l0 * c20)
+    c_4 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 4, y0 = -l0/2)
+    c_5 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 5, y0 = -l0 * s20, x0 = -l0 * c20)
+    c_6 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 6, y0 =  l0 * s20, x0 = -l0 * c20)
+    
+    h_1 = atom(atom_number = 7, element = 'hydrogen', element_type = 'HCA2A', x0 = c_1.pos[0] - h_bond - 0.01, y0 = c_1.pos[1] + h_bond, z0 = .5)
+    h_2 = atom(atom_number = 8, element = 'hydrogen', element_type = 'HCA2A', x0 = c_1.pos[0] + h_bond, y0 = c_1.pos[1] + h_bond, z0 = -0.5)
+    
+    h_3 = atom(atom_number = 9, element = 'hydrogen', element_type = 'HCA2A', x0 = c_2.pos[0] + h_bond, y0 = c_2.pos[1] + h_bond)
+    h_4 = atom(atom_number = 10, element = 'hydrogen', element_type = 'HCA2A', x0 = c_2.pos[0] + l1, y0 = c_2.pos[1])
+    
+    h_5 = atom(atom_number = 11, element = 'hydrogen', element_type = 'HCA2A', x0 = c_3.pos[0] + l1, y0 = c_3.pos[1])
+    h_6 = atom(atom_number = 12, element = 'hydrogen', element_type = 'HCA2A', x0 = c_3.pos[0] + h_bond, y0 = c_3.pos[1] - h_bond)
+    
+    h_7 = atom(atom_number = 13, element = 'hydrogen', element_type = 'HCA2A', x0 = c_4.pos[0] + h_bond, y0 = c_4.pos[1] - h_bond)
+    h_8 = atom(atom_number = 14, element = 'hydrogen', element_type = 'HCA2A', x0 = c_4.pos[0] - h_bond, y0 = c_4.pos[1] - h_bond)
+
+    h_9 = atom(atom_number = 15, element = 'hydrogen', element_type = 'HCA2A', x0 = c_5.pos[0] - l1, y0 = c_5.pos[1])
+    h_10 = atom(atom_number = 16, element = 'hydrogen', element_type = 'HCA2A', x0 = c_5.pos[0] - h_bond, y0 = c_5.pos[1] - h_bond)
+
+    h_11 = atom(atom_number = 17, element = 'hydrogen', element_type = 'HCA2A', x0 = c_6.pos[0] - h_bond, y0 = c_6.pos[1] + h_bond)
+    h_12 = atom(atom_number = 18, element = 'hydrogen', element_type = 'HCA2A', x0 = c_6.pos[0] - l1, y0 = c_6.pos[1])
+
+
+    my_MD_simulation.initialize_non_bonding_pairs()
     my_MD_simulation.visualize()
     
 #############################################################################################################################
