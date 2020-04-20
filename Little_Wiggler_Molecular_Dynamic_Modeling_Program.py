@@ -75,86 +75,6 @@ def cartesian_coordinate_conversion_matrix(r, theta, phi):
     atom_pos_cartesian = np.array([x, y,z])
     return atom_pos_cartesian
            
-def ders(t, y):
-
-    """ Ders function used in scipy.integrate.ode to calculate the 
-        accelerations of all of the atoms based on forces due to the 
-        different potential terms """
-    
-    vals[:] = y
-    
-    for mol in molecule.all_molecules:
-        mol.clear_all_counted()
-
-    index = len(y)//7
-        
-    dvals = np.empty((len(y)))
-    dvals[0:3*index] = y[3*index:6*index]
-    
-    """ Update all the forces """
-
-    for at in atom.all_atoms:
-        at.force[:] = 0.0
-
-    for mol in molecule.all_molecules:
-        mol.get_all_forces()
-
-    for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-        lennard_pair.atom1_force_counted = False
-        lennard_pair.atom2_force_counted = False
-    
-    for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-        if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
-            lennard_pair.lennard_jones_force()
-            
-    for sparky_pair in electrostatic.all_electrostatic_pairs:
-        sparky_pair.atom1_force_counted = False
-        sparky_pair.atom2_force_counted = False
-    
-    for sparky_pair in electrostatic.all_electrostatic_pairs:
-        if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
-            sparky_pair.electrostatic_force()
-
-    
-    """ Get the accelerations in dvals for any atom to go outside the specified boundary.
-        This also accounts of the work that is done by the boundary, which is approimated
-        as many stiff springs.  """
-    
-    vindex = 3*len(dvals)//7
-    windex = 6*len(dvals)//7
-    
-    for mol in molecule.all_molecules:
-        for at in mol.atoms:
-
-            outside = False
-            
-            distance_vec = at.pos
-            distance_mag = mag(distance_vec)
-            distance_unit_vec = distance_vec / distance_mag
-            
-            if distance_mag - simulation.boundary > 0.0:
-                outside = True
-                
-            if outside == False:
-                dvals[vindex:vindex+3] = at.force/at.mass - y[vindex:vindex+3] * molecule.dampening_coef/at.mass
-                dvals[windex] = - molecule.dampening_coef * np.square(y[vindex:vindex+3]).sum()
-
-            if outside == True:
-                
-                dvals[vindex:vindex+3] = ( at.force/at.mass - y[vindex:vindex+3] * molecule.dampening_coef/at.mass 
-                                                            - abs(distance_mag - simulation.boundary) * simulation.stiffness_coefficient/at.mass
-                                                                                           * distance_unit_vec )
-
-                dvals[windex] = ( - molecule.dampening_coef * np.square(y[vindex:vindex+3]).sum() 
-                                  - abs(distance_mag - simulation.boundary) * simulation.stiffness_coefficient *
-                                  ( distance_unit_vec[0] * y[vindex]     +
-                                    distance_unit_vec[1] * y[vindex + 1] +
-                                    distance_unit_vec[2] * y[vindex + 2] ) )
-                
-            vindex += 3
-            windex += 1
-
-    return dvals
     
 
 #############################################################################################################################
@@ -210,6 +130,9 @@ class simulation():
     stiffness_coefficient = 0
     
     def __init__(self, squishy_sphere = False, radius = 100.0, stiffness = 1E5):
+
+        # vals will hold the global data in one place, for fast copying to and from scipy.integrate.ode's internal data
+        self.vals = None
         
         if squishy_sphere == True:
 
@@ -600,6 +523,86 @@ class simulation():
 
         file.close()
 
+    def ders(self, t, y):
+
+        """ Ders function used in scipy.integrate.ode to calculate the 
+            accelerations of all of the atoms based on forces due to the 
+            different potential terms """
+
+        self.vals[:] = y
+
+        for mol in molecule.all_molecules:
+            mol.clear_all_counted()
+
+        index = len(y)//7
+
+        dvals = np.empty((len(y)))
+        dvals[0:3*index] = y[3*index:6*index]
+
+        """ Update all the forces """
+
+        for at in atom.all_atoms:
+            at.force[:] = 0.0
+
+        for mol in molecule.all_molecules:
+            mol.get_all_forces()
+
+        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+            lennard_pair.atom1_force_counted = False
+            lennard_pair.atom2_force_counted = False
+
+        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+            if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
+                lennard_pair.lennard_jones_force()
+
+        for sparky_pair in electrostatic.all_electrostatic_pairs:
+            sparky_pair.atom1_force_counted = False
+            sparky_pair.atom2_force_counted = False
+
+        for sparky_pair in electrostatic.all_electrostatic_pairs:
+            if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
+                sparky_pair.electrostatic_force()
+
+
+        """ Get the accelerations in dvals for any atom to go outside the specified boundary.
+            This also accounts of the work that is done by the boundary, which is approimated
+            as many stiff springs.  """
+
+        vindex = 3*len(dvals)//7
+        windex = 6*len(dvals)//7
+
+        for mol in molecule.all_molecules:
+            for at in mol.atoms:
+
+                outside = False
+
+                distance_vec = at.pos
+                distance_mag = mag(distance_vec)
+                distance_unit_vec = distance_vec / distance_mag
+
+                if distance_mag - simulation.boundary > 0.0:
+                    outside = True
+
+                if outside == False:
+                    dvals[vindex:vindex+3] = at.force/at.mass - y[vindex:vindex+3] * molecule.dampening_coef/at.mass
+                    dvals[windex] = - molecule.dampening_coef * np.square(y[vindex:vindex+3]).sum()
+
+                if outside == True:
+
+                    dvals[vindex:vindex+3] = ( at.force/at.mass - y[vindex:vindex+3] * molecule.dampening_coef/at.mass 
+                                                                - abs(distance_mag - simulation.boundary) * simulation.stiffness_coefficient/at.mass
+                                                                                               * distance_unit_vec )
+
+                    dvals[windex] = ( - molecule.dampening_coef * np.square(y[vindex:vindex+3]).sum() 
+                                      - abs(distance_mag - simulation.boundary) * simulation.stiffness_coefficient *
+                                      ( distance_unit_vec[0] * y[vindex]     +
+                                        distance_unit_vec[1] * y[vindex + 1] +
+                                        distance_unit_vec[2] * y[vindex + 2] ) )
+
+                vindex += 3
+                windex += 1
+
+        return dvals
 
 # class testing_potentials:
 #     """ 
@@ -2054,8 +2057,6 @@ class visual:
             
 def main():
 
-    global vals
-
     my_MD_simulation = simulation(squishy_sphere = True, radius = 15.0, stiffness = 1E3)
 
     # protein_length = 12
@@ -2172,18 +2173,18 @@ def main():
     for mol in molecule.all_molecules:
         n_atoms += len(mol.atoms)
 
-    vals = np.empty(7*n_atoms)
+    my_MD_simulation.vals = np.empty(7*n_atoms)
     
-    integrator = ode(ders)
+    integrator = ode(my_MD_simulation.ders)
     integrator.set_integrator("vode", rtol = 1E-6)
 
     pindex = 0
     windex = 0
     for mol in molecule.all_molecules:
         for at in mol.atoms:
-            at.move_data_to_buffers( vals[pindex:pindex+3],
-                                     vals[3*n_atoms+pindex : 3*n_atoms+pindex+3],
-                                     vals[6*n_atoms+windex : 6*n_atoms+windex+1] )
+            at.move_data_to_buffers( my_MD_simulation.vals[pindex:pindex+3],
+                                     my_MD_simulation.vals[3*n_atoms+pindex : 3*n_atoms+pindex+3],
+                                     my_MD_simulation.vals[6*n_atoms+windex : 6*n_atoms+windex+1] )
             pindex += 3
             windex += 1
             
@@ -2193,16 +2194,22 @@ def main():
     t_checker = 1
     dt = 1E-2
 
-    integrator.set_initial_value(vals)
+    integrator.set_initial_value(my_MD_simulation.vals)
 
     done = False
+
+    printevery = 20
+    nextprint = printevery
     
     while done == False:
 
-        print(t)
+        nextprint -=1
+        if nextprint <=0:
+            print("t={:3g}".format(t))
+            nextprint=printevery
         
         integrator.integrate(t + dt)
-        vals[:] = integrator.y
+        my_MD_simulation.vals[:] = integrator.y
         
         my_MD_simulation.times.append(t)
         my_MD_simulation.update_energies()
