@@ -36,8 +36,8 @@ from scipy.spatial.transform import Rotation as R
 Time_Unit = ( (1.66054E-27) * (1E-10)**2 / 1.602E-19 ) ** (1/2)
 energy_conversion_factor = (2.611E22/6.022E23)
 
-Simulation_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/MD_Simulation_Final_Data/'
-Resdiue_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/Residue_Equilibrium_Position_Txt_Files/'
+Simulation_config_path = 'MD_Simulation_Final_Data/'
+Resdiue_config_path = 'Residue_Equilibrium_Position_Txt_Files/'
 CHARMM_config_path = 'CHARMM_FILES/'
 
 def mag(vector):
@@ -114,7 +114,6 @@ def ders(t, y):
     for sparky_pair in electrostatic.all_electrostatic_pairs:
         if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
             sparky_pair.electrostatic_force()
-
 
     
     """ Get the accelerations in dvals for any atom to go outside the specified boundary.
@@ -2190,7 +2189,7 @@ def main():
             
     t = 0 
     tf = 500.0
-    t_int = 10.
+    t_int = 1.
     t_checker = 1
     dt = 1E-2
 
@@ -2234,7 +2233,7 @@ def main():
 
         vis.rate(30) 
 
-    my_MD_simulation.print_final_positions(name = str('This_is_a_test_image'))
+    my_MD_simulation.print_final_positions(name = str('Cyclohexane_Final_Structure'))
     # my_MD_simulation.graph_energy_conservation( save_image = True)
     
 if __name__ == '__main__':
