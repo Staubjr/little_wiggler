@@ -38,7 +38,7 @@ energy_conversion_factor = (2.611E22/6.022E23)
 
 Simulation_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/MD_Simulation_Final_Data/'
 Resdiue_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/Residue_Equilibrium_Position_Txt_Files/'
-CHARMM_config_path = '/home/staubj/Capstone_Files/Txt_CHARM_Files/CHARRM_FILES/'
+CHARMM_config_path = 'CHARMM_FILES/'
 
 def mag(vector):
     """ Returns the magnitude of a vector """
@@ -1591,7 +1591,9 @@ class electrostatic:
                'OC'  : -0.76,
                'OH1' : -0.66,
                'OT'  : -0.834,
-               'S'   : -0.23 }
+               'S'   : -0.23,
+               'HCA2A' : 0.09,
+               'CC32A' : -0.18}
 
     def __init__(self, atom1, atom2):
         self.atom1 = atom1
@@ -2093,9 +2095,6 @@ def main():
     h2pos = np.matmul(rotmat, h2pos)
     h3pos = np.matmul(rotmat, h3pos)
 
-    
-    global vals
-    
     c_1 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 1, y0 =  l0/2)
     c_2 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 2, y0 =  l0 * s20, x0 =  l0 * c20)
     c_3 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 3, y0 = -l0 * s20, x0 =  l0 * c20)
@@ -2121,7 +2120,49 @@ def main():
     h_11 = atom(atom_number = 17, element = 'hydrogen', element_type = 'HCA2A', x0 = c_6.pos[0] - h_bond, y0 = c_6.pos[1] + h_bond)
     h_12 = atom(atom_number = 18, element = 'hydrogen', element_type = 'HCA2A', x0 = c_6.pos[0] - l1, y0 = c_6.pos[1])
 
+    cyclohexane_1 = molecule()
+    my_MD_simulation.molecules.append(cyclohexane_1)
+    
+    cyclohexane_1.add_atom(h_1)
+    cyclohexane_1.add_atom(h_2) 
+    cyclohexane_1.add_atom(h_3)
+    cyclohexane_1.add_atom(h_4)
+    cyclohexane_1.add_atom(h_5)
+    cyclohexane_1.add_atom(h_6)
+    cyclohexane_1.add_atom(h_7)
+    cyclohexane_1.add_atom(h_8)
+    cyclohexane_1.add_atom(h_9)
+    cyclohexane_1.add_atom(h_10)
+    cyclohexane_1.add_atom(h_11)
+    cyclohexane_1.add_atom(h_12)
+    
+    cyclohexane_1.add_atom(c_1)
+    cyclohexane_1.add_atom(c_2)
+    cyclohexane_1.add_atom(c_3)
+    cyclohexane_1.add_atom(c_4)
+    cyclohexane_1.add_atom(c_5)
+    cyclohexane_1.add_atom(c_6)    
 
+    cyclohexane_1.bond_atoms(h_1 , c_1, 1)
+    cyclohexane_1.bond_atoms(h_2 , c_1, 1)
+    cyclohexane_1.bond_atoms(h_3 , c_2, 1)    
+    cyclohexane_1.bond_atoms(h_4 , c_2, 1)
+    cyclohexane_1.bond_atoms(h_5 , c_3, 1)
+    cyclohexane_1.bond_atoms(h_6 , c_3, 1)
+    cyclohexane_1.bond_atoms(h_7 , c_4, 1)
+    cyclohexane_1.bond_atoms(h_8 , c_4, 1)
+    cyclohexane_1.bond_atoms(h_9 , c_5, 1)
+    cyclohexane_1.bond_atoms(h_10, c_5, 1)
+    cyclohexane_1.bond_atoms(h_11, c_6, 1)
+    cyclohexane_1.bond_atoms(h_12, c_6, 1)
+    
+    cyclohexane_1.bond_atoms(c_1, c_2, 1)
+    cyclohexane_1.bond_atoms(c_2, c_3, 1)
+    cyclohexane_1.bond_atoms(c_3, c_4, 1)
+    cyclohexane_1.bond_atoms(c_4, c_5, 1)
+    cyclohexane_1.bond_atoms(c_5, c_6, 1)
+    cyclohexane_1.bond_atoms(c_6, c_1, 1)
+    
     my_MD_simulation.initialize_non_bonding_pairs()
     my_MD_simulation.visualize()
     
@@ -2173,7 +2214,7 @@ def main():
 
         if t >= t_int:
 
-            my_MD_simulation.print_final_positions(name = str('{:.0f}'.format(t)))
+            # my_MD_simulation.print_final_positions(name = str('{:.0f}'.format(t)))
             
             done_moving = True
             vel_min = 1E-2
