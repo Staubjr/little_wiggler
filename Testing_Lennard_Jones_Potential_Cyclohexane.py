@@ -829,7 +829,7 @@ class lennard_jones:
         mag_r = mag(r_vec)
         dU_dr = 12 * self.Epsilon * ( ( (self.R_min) ** 12 / (mag_r )** 13 ) -
                                        ( (self.R_min) ** 6  / (mag_r) ** 7 )  )
-        Force_1 = dU_dr * r_vec
+        Force_1 = dU_dr * r_hat
         Force_2 = - Force_1
 
         Force_list = [Force_1, Force_2]
