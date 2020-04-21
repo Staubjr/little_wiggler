@@ -5,7 +5,7 @@ import math
 
 global file_config_path
 
-file_config_path = str('/home/staubj/Capstone_Files/Txt_CHARM_Files/CHARRM_FILES/')
+file_config_path = str('CHARMM_FILES/')
 
 def read_CHARRM_file():
 
@@ -259,7 +259,7 @@ def read_CHARRM_file():
         fixed_values.pop(1)
 
         lennard_jones_values.append(fixed_values)
-
+        
     write_file.write('#BONDS\n')
     write_file.write('#ATOM#1\tATOM#2\tKb(Kcal/mol/A**2)\tBOND_LENGTH(A)\n')
 
@@ -281,11 +281,25 @@ def read_CHARRM_file():
     write_file.write('#\n#\n#Dihedrals\n')
     write_file.write('#ATOM#1\tATOM#2\tATOM#3\tATOM#4\tKchi(Kcal/mol)\tn\tdelta(degrees)\n')
 
+
+    written_dihedrals = []
+    
     for dihedral in dihedral_values:
-        for value in dihedral:
-            write_file.write(str(value))
-            write_file.write('\t')
-        write_file.write('\n')
+        
+        test_dihedral = [dihedral[0], dihedral[1], dihedral[2], dihedral[3]]
+        write_dihedral = True
+
+        for finished_dihedral in written_dihedrals:
+            if test_dihedral == finished_dihedral:
+                write_dihedral = False
+
+        if write_dihedral == True:
+            for value in dihedral:
+                write_file.write(str(value))
+                write_file.write('\t')
+            write_file.write('\n')
+            
+        written_dihedrals.append(test_dihedral)
 
     write_file.write('#\n#\n#Lennard-Jones\n')
     write_file.write('#ATOM#1\tEpsilon(Kcal/mol)\tRmin/2\n')

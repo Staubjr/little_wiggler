@@ -36,9 +36,10 @@ from scipy.spatial.transform import Rotation as R
 Time_Unit = ( (1.66054E-27) * (1E-10)**2 / 1.602E-19 ) ** (1/2)
 energy_conversion_factor = (2.611E22/6.022E23)
 
-Simulation_config_path = 'MD_Simulation_Final_Data/'
-Resdiue_config_path = 'Residue_Equilibrium_Position_Txt_Files/'
-CHARMM_config_path = 'CHARMM_FILES/'
+Code_config_path = os.getcwd()
+Simulation_config_path = 'MD_Simulation_Final_Data'
+Resdiue_config_path = 'Residue_Equilibrium_Position_Txt_Files'
+CHARMM_config_path = 'CHARMM_FILES'
 
 def mag(vector):
     """ Returns the magnitude of a vector """
@@ -245,12 +246,12 @@ class simulation():
                 
                 for at in atom2.atoms_bonded_to:
                     if at == atom1:
-                        make_interaction = False
+                        make_interaction = True
 
                 for at in atom2.atoms_bonded_to:
                     for at_2 in at.atoms_bonded_to:
                         if at_2 == atom1:
-                            make_interaction = False
+                            make_interaction = True
 
                 if make_interaction == True:
                     lennard_jones_pair = lennard_jones(atom1, atom2)
@@ -485,6 +486,7 @@ class simulation():
 
     def print_final_positions(self, name):
 
+        os.chdir(Code_config_path)
         os.chdir(Simulation_config_path)
         file = open('{}.txt'.format(str(name)), 'w')
 
@@ -547,21 +549,21 @@ class simulation():
         for mol in molecule.all_molecules:
             mol.get_all_forces()
 
-        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-            lennard_pair.atom1_force_counted = False
-            lennard_pair.atom2_force_counted = False
+        # for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+        #     lennard_pair.atom1_force_counted = False
+        #     lennard_pair.atom2_force_counted = False
 
-        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-            if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
-                lennard_pair.lennard_jones_force()
+        # for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+        #     if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
+        #         lennard_pair.lennard_jones_force()
 
-        for sparky_pair in electrostatic.all_electrostatic_pairs:
-            sparky_pair.atom1_force_counted = False
-            sparky_pair.atom2_force_counted = False
+        # for sparky_pair in electrostatic.all_electrostatic_pairs:
+        #     sparky_pair.atom1_force_counted = False
+        #     sparky_pair.atom2_force_counted = False
 
-        for sparky_pair in electrostatic.all_electrostatic_pairs:
-            if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
-                sparky_pair.electrostatic_force()
+        # for sparky_pair in electrostatic.all_electrostatic_pairs:
+        #     if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
+        #         sparky_pair.electrostatic_force()
 
 
         """ Get the accelerations in dvals for any atom to go outside the specified boundary.
@@ -795,7 +797,7 @@ class atom:
         
 class molecule():
 
-    dampening_coef = 0.7  # I typically use 1.0 for 'good' results
+    dampening_coef = 0.9  # I typically use 1.0 for 'good' results
     
     all_molecules = []
 
@@ -898,19 +900,31 @@ class molecule():
         """ Lennard Jones Forces :
             Not calculated here. Calculated in ders function.  """
                 
-        # for specific_atom in self.atoms:
+        for specific_atom in self.atoms:
 
-        #     for specific_lennard_jones_pair in lennard_jones.all_lennard_jones_pairs:
+            for specific_lennard_jones_pair in lennard_jones.all_lennard_jones_pairs:
 
-        #         if specific_atom == specific_lennard_jones_pair.atom1 and specific_lennard_jones_pair.atom1_force_counted == False:
-        #             forces = specific_lennard_jones_pair.lennard_jones_force()
-        #             specific_lennard_jones_pair.atom1.force += forces[0]
-        #             specific_lennard_jones_pair.atom1_force_counted = True
+                # if specific_lennard_jones_pair.atom1.atom_number == int(8):
+                #     if specific_lennard_jones_pair.atom2.atom_number == int(16):
+                #         print(specific_lennard_jones_pair.atom1.atom_number, specific_lennard_jones_pair.atom1.element_type, specific_lennard_jones_pair.atom2.atom_number, specific_lennard_jones_pair.atom2.element_type)
+                #         print(specific_lennard_jones_pair.lennard_jones_force())
+                #         print(specific_lennard_jones_pair.Epsilon)
+                #         print(specific_lennard_jones_pair.R_min)
+                #         print(mag(specific_lennard_jones_pair.atom1.pos - specific_lennard_jones_pair.atom2.pos))
+                #         print(specific_lennard_jones_pair.atom1.pos - specific_lennard_jones_pair.atom2.pos) 
+                        
+
+                if specific_atom == specific_lennard_jones_pair.atom1:
+                    forces = specific_lennard_jones_pair.lennard_jones_force()
+                    specific_lennard_jones_pair.atom1.force += forces[0]
+                    # specific_lennard_jones_pair.atom1_force_counted = True
                     
-        #         if specific_atom == specific_lennard_jones_pair.atom2 and specific_lennard_jones_pair.atom2_force_counted == False:
-        #             forces = specific_lennard_jones_pair.lennard_jones_force()
-        #             specific_lennard_jones_pair.atom2.force += forces[1]
-        #             specific_lennard_jones_pair.atom2_force_counted = True
+                if specific_atom == specific_lennard_jones_pair.atom2:
+                    forces = specific_lennard_jones_pair.lennard_jones_force()
+                    specific_lennard_jones_pair.atom2.force += forces[1]
+                    # specific_lennard_jones_pair.atom2_force_counted = True
+
+            # sys.exit(20)
 
         """ Electrostatic Potential Forces :
             Not calculated here. Calculated in ders function. """
@@ -1271,8 +1285,8 @@ class dihedral:
             self.n = 1
             no_n = True
             
-            # if hydrogen_present == False:
-            #     sys.stderr.write('Could not find a n for the dihedral {} or {}, defaulted to 1\n'.format(self.typedex, self.reverse_typedex))
+            if hydrogen_present == False:
+                sys.stderr.write('Could not find a n for the dihedral {} or {}, defaulted to 1\n'.format(self.typedex, self.reverse_typedex))
                 
 
         if self.typedex in dihedral.delta:
@@ -1284,8 +1298,8 @@ class dihedral:
             self.delta = 0.
             no_delta = True
             
-            # if hydrogen_present == False:
-            #     sys.stderr.write('Could not find a delta for the dihedral {} or {}, defaulted to 0\n'.format(self.typedex, self.reverse_typedex))
+            if hydrogen_present == False:
+                sys.stderr.write('Could not find a delta for the dihedral {} or {}, defaulted to 0\n'.format(self.typedex, self.reverse_typedex))
 
         if self.typedex in dihedral.k_chi:
             self.k_chi = dihedral.k_chi[self.typedex]
@@ -1296,8 +1310,8 @@ class dihedral:
             self.k_chi = 0.
             no_chi = True
             
-            # if hydrogen_present == False:
-            #     sys.stderr.write('COuld not find a k_chi for the dihedral {} or {}, defaulted to 0\n'.format(self.typedex, self.reverse_typedex))
+            if hydrogen_present == False:
+                sys.stderr.write('COuld not find a k_chi for the dihedral {} or {}, defaulted to 0\n'.format(self.typedex, self.reverse_typedex))
 
         if hydrogen_present == False:
             if no_n == True and no_delta == True and no_chi == True:
@@ -1509,8 +1523,8 @@ class lennard_jones:
         self.atom2_potential_counted = False
         self.atom2_force_counted = False
         
-        self.Epsilon = (2.6114E22/6.022E23) * math.sqrt( lennard_jones.epsilon_i[atom_1.element_type] *
-                                                         lennard_jones.epsilon_i[atom_2.element_type] )
+        self.Epsilon = math.sqrt( lennard_jones.epsilon_i[atom_1.element_type] *
+                                  lennard_jones.epsilon_i[atom_2.element_type] )
 
         
         self.R_min = ( lennard_jones.r_min_i[atom_1.element_type]/2 +
@@ -1525,7 +1539,7 @@ class lennard_jones:
         potential = self.Epsilon * ( (self.R_min/mag_r)**12 - 2 * (self.R_min/mag_r)**6)
         
         self.atom1_potential_counted = True
-        self.atom2_potentail_counted = True
+        self.atom2_potential_counted = True
         
         return potential
 
@@ -1542,11 +1556,11 @@ class lennard_jones:
 
         Force_list = [Force_1, Force_2]
         
-        self.atom1.force += Force_1
-        self.atom2.force += Force_2
+        # self.atom1.force += Force_1
+        # self.atom2.force += Force_2
 
-        self.atom1_potential_counted = True
-        self.atom2_potential_counted = True
+        # self.atom1_potential_counted = True
+        # self.atom2_potential_counted = True
 
         return Force_list
 
@@ -2057,7 +2071,7 @@ class visual:
             
 def main():
 
-    my_MD_simulation = simulation(squishy_sphere = True, radius = 15.0, stiffness = 1E3)
+    my_MD_simulation = simulation(squishy_sphere = True, radius = 1000.0, stiffness = 1E3)
 
     # protein_length = 12
     
@@ -2162,9 +2176,33 @@ def main():
     cyclohexane_1.bond_atoms(c_4, c_5, 1)
     cyclohexane_1.bond_atoms(c_5, c_6, 1)
     cyclohexane_1.bond_atoms(c_6, c_1, 1)
+
+    # print(len(cyclohexane_1.bonds))
+
+    # for bond in cyclohexane_1.bonds:
+    #     print("{}-{}, k = {}, lenght = {}".format(bond.atom1.element_type, bond.atom2.element_type, bond.k_bond, bond.E0_bond))
+    
+    # print(len(cyclohexane_1.bond_angles))
+
+    # for bond_angle in cyclohexane_1.bond_angles:
+    #     print("{}-{}-{}, k = {}, angle = {}".format(bond_angle.start_atom.element_type, bond_angle.middle_atom.element_type, bond_angle.end_atom.element_type, bond_angle.k_bond_angle, bond_angle.bond_angle0))
+                
+
+    
+    # print(len(cyclohexane_1.dihedrals))
+    # sys.exit(20)
     
     my_MD_simulation.initialize_non_bonding_pairs()
-    my_MD_simulation.visualize()
+
+    # print(len(lennard_jones.all_lennard_jones_pairs))
+
+    # for pair in lennard_jones.all_lennard_jones_pairs:
+    #     print("{}-{}, Eps = {}, R_min = {}".format(pair.atom1.element_type, pair.atom2.element_type, pair.Epsilon, pair.R_min))
+    
+    # sys.exit(20)
+
+    
+   # my_MD_simulation.visualize()
     
 #############################################################################################################################
     
@@ -2200,7 +2238,7 @@ def main():
 
     printevery = 20
     nextprint = printevery
-    
+
     while done == False:
 
         nextprint -=1
@@ -2214,17 +2252,15 @@ def main():
         my_MD_simulation.times.append(t)
         my_MD_simulation.update_energies()
 
-        visual.update_visual()
+        # visual.update_visual()
 
         # t = protein_one.amino_acids[0].save_residue_positions(t, tf)
 
         if t >= t_int:
-
-            # my_MD_simulation.print_final_positions(name = str('{:.0f}'.format(t)))
             
             done_moving = True
-            vel_min = 1E-2
-
+            vel_min = 1E-3           
+            
             for mol in my_MD_simulation.molecules:
                 for at in mol.atoms:
                     if mag(at.vel) > vel_min:
@@ -2238,7 +2274,7 @@ def main():
                 
         t += dt
 
-        vis.rate(30) 
+        # vis.rate(30) 
 
     my_MD_simulation.print_final_positions(name = str('Cyclohexane_Final_Structure'))
     # my_MD_simulation.graph_energy_conservation( save_image = True)
