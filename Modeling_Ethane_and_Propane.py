@@ -332,16 +332,20 @@ class simulation():
             sparky_pair.atom1_potnetial_counted = False
             sparky_pair.atom2_potential_counted = False
 
-        for molecule in self.molecules:
+        for mol in molecule.all_molecules:
+            mol.clear_all_counted()
+            
+        for mol in self.molecules:
 
-            for bond in molecule.bonds:
+            for bond in mol.bonds:
                 self.potential_energy += bond.bond_potential()
 
-            for bond_angle in molecule.bond_angles:
+            for bond_angle in mol.bond_angles:
                 self.potential_energy += bond_angle.bond_angle_potential()
 
-            for dihedral in molecule.dihedrals:
-                self.potential_energy += dihedral.dihedral_potential()
+            for dihedral in mol.dihedrals:
+                if dihedral.counted == False:
+                    self.potential_energy += dihedral.dihedral_potential()
 
             for lennard_pair in lennard_jones.all_lennard_jones_pairs:
                 if lennard_pair.atom1_potential_counted == False and lennard_pair.atom2_potential_counted == False:
@@ -991,7 +995,7 @@ class bond:
         return potential
     
     def bond_force(self):
-        """ Calculates the spring bond potential and returns dU """
+        """ Calculates the spring bond potential and returns dU <-- no it doesn't """
                                                                               
         r_vec = (self.atom2.pos - self.atom1.pos)
         r_hat = r_vec/mag(r_vec)
@@ -1329,14 +1333,10 @@ class dihedral:
         if no_chi == True and no_delta == False:
             sys.exit(20)
     
-
-    def dihedral_potential(self):
-        
-        ''' Calculates the potential from the dihedrals '''
-        
-        a_vec = self.first_atom.pos - self.second_atom.pos
-        b_vec = self.second_atom.pos - self.third_atom.pos
-        c_vec = self.fourth_atom.pos - self.third_atom.pos
+    def dihedral_chi(self, offfirst, offsecond, offthird, offfourth):
+        a_vec = self.first_atom.pos + offfirst - self.second_atom.pos - offsecond
+        b_vec = self.second_atom.pos + offsecond - self.third_atom.pos - offthird
+        c_vec = self.fourth_atom.pos +offfourth - self.third_atom.pos - offthird
 
         a_mag = mag(a_vec)
         b_mag = mag(b_vec)
@@ -1380,6 +1380,16 @@ class dihedral:
         else:
             chi = -1*chi
 
+        return chi
+
+            
+    def dihedral_potential(self):
+        
+        ''' Calculates the potential from the dihedrals '''
+
+        zeros = np.zeros(3)
+        chi = self.dihedral_chi(zeros, zeros, zeros, zeros)
+        
         potential =  self.k_chi * ( 1 + math.cos( self.n * chi - self.delta ) )
 
         return potential
@@ -1394,106 +1404,103 @@ class dihedral:
                     3.) Central Bond Atom 2
                     4.) End Atom                                 '''
 
-        if self.k_chi == 0.:
-            self.first_atom.counted = True
-            self.second_atom.counted = True
-            self.third_atom.counted = True
-            self.fourth_atom.counted = True
-            return
+        # Lord help me, it's a slow-ass numerical derivative
+        small = 1e-6
+        zeros = np.zeros(3)
+        chi0 = self.dihedral_chi(zeros, zeros, zeros, zeros)
+        dchi_1x = self.dihedral_chi(np.array([small, 0., 0.]), zeros, zeros, zeros) - chi0
+        dchi_1y = self.dihedral_chi(np.array([0., small, 0.]), zeros, zeros, zeros) - chi0
+        dchi_1z = self.dihedral_chi(np.array([0., 0., small]), zeros, zeros, zeros) - chi0
+        dchi_2x = self.dihedral_chi(zeros, np.array([small, 0., 0.]), zeros, zeros) - chi0
+        dchi_2y = self.dihedral_chi(zeros, np.array([0., small, 0.]), zeros, zeros) - chi0
+        dchi_2z = self.dihedral_chi(zeros, np.array([0., 0., small]), zeros, zeros) - chi0
+        dchi_3x = self.dihedral_chi(zeros, zeros, np.array([small, 0., 0.]), zeros) - chi0
+        dchi_3y = self.dihedral_chi(zeros, zeros, np.array([0., small, 0.]), zeros) - chi0
+        dchi_3z = self.dihedral_chi(zeros, zeros, np.array([0., 0., small]), zeros) - chi0
+        dchi_4x = self.dihedral_chi(zeros, zeros, zeros, np.array([small, 0., 0.])) - chi0
+        dchi_4y = self.dihedral_chi(zeros, zeros, zeros, np.array([0., small, 0.])) - chi0
+        dchi_4z = self.dihedral_chi(zeros, zeros, zeros, np.array([0., 0., small])) - chi0
         
-        a_vec = self.first_atom.pos - self.second_atom.pos
-        b_vec = self.second_atom.pos - self.third_atom.pos
-        c_vec = self.fourth_atom.pos - self.third_atom.pos
+        dU_dChi = -1*self.n * self.k_chi * math.sin( self.n * chi0 - self.delta )
 
-        a_mag = mag(a_vec)
-        b_mag = mag(b_vec)
-        c_mag = mag(c_vec)
-
-        a_unit_vec = a_vec / a_mag
-        b_unit_vec = b_vec / b_mag
-        c_unit_vec = c_vec / c_mag
-
-        a_perp = a_vec - b_unit_vec * ( a_vec[0] * b_unit_vec[0] +
-                                        a_vec[1] * b_unit_vec[1] +
-                                        a_vec[2] * b_unit_vec[2] )
-
-        c_perp = c_vec - b_unit_vec * ( c_vec[0] * b_unit_vec[0] +
-                                        c_vec[1] * b_unit_vec[1] +
-                                        c_vec[2] * b_unit_vec[2] )
-
-
-        acos_argument = ((a_perp[0] * c_perp[0] +
-                          a_perp[1] * c_perp[1] +
-                          a_perp[2] * c_perp[2])
-
-                         /
-
-                         ( mag(a_perp) * mag(c_perp) ) )
-
-        if acos_argument < -1.0:
-            acos_argument = -1.0
-
-        if acos_argument > 1.0:
-            acos_argument = 1.0
-        
-        chi = math.acos( acos_argument )
-
-        cross = cross_product(a_perp, c_perp)
-
-        if ( cross[0] * b_vec[0] +
-             cross[1] * b_vec[1] +
-             cross[2] * b_vec[2]) > 0:
-            chi = chi
-        else:
-            chi = -1*chi
-
-        dU_dChi = -1*self.n * self.k_chi * math.sin( self.n * chi - self.delta )
+        self.first_atom.force += np.array( [ -dU_dChi * dchi_1x / small,
+                                             -dU_dChi * dchi_1y / small,
+                                             -dU_dChi * dchi_1z / small ] )
+        self.second_atom.force += np.array( [ -dU_dChi * dchi_2x / small,
+                                              -dU_dChi * dchi_2y / small,
+                                              -dU_dChi * dchi_2z / small ] )
+        self.third_atom.force += np.array( [ -dU_dChi * dchi_3x / small,
+                                             -dU_dChi * dchi_3y / small,
+                                             -dU_dChi * dchi_3z / small ] )
+        self.fourth_atom.force += np.array( [ -dU_dChi * dchi_4x / small,
+                                              -dU_dChi * dchi_4y / small,
+                                              -dU_dChi * dchi_4z / small ] )
     
-        if math.fabs(dU_dChi) < 1E-25:
-            dU_dChi = 0.
-            F_a_vec = 0.
-            Summed_Forces = 0.
-            Summed_Forces = 0.
-            F_c_vec = 0.
+        # if math.fabs(dU_dChi) < 1E-25:
+        #     dU_dChi = 0.
+        #     F_a_vec = 0.
+        #     Summed_Forces = 0.
+        #     Summed_Forces = 0.
+        #     F_c_vec = 0.
             
 
-        # ''' Note: This gives us the values of dU, but now we need the direction
-        #           and magnitude of the torque. The magnitude of the torque is based
-        #           on the dU value and the length of bond from the outer atom to
-        #           the nearest atom in the central bond. To get the direction of
-        #           the torque, we can use the same procedure that we did when we 
-        #           get the bond angle. First, we need to get the cross product
-        #           between the two perpendicular vectors (a_perp and c_perp). 
-        #           Then we can take this cross product, get the hat vector, and cross
-        #           it with the hat of each perpendicular vector. The next step is
-        #           is to multiply this by the value of force and return this value. '''
+        # # ''' Note: This gives us the values of dU, but now we need the direction
+        # #           and magnitude of the torque. The magnitude of the torque is based
+        # #           on the dU value and the length of bond from the outer atom to
+        # #           the nearest atom in the central bond. To get the direction of
+        # #           the torque, we can use the same procedure that we did when we 
+        # #           get the bond angle. First, we need to get the cross product
+        # #           between the two perpendicular vectors (a_perp and c_perp). 
+        # #           Then we can take this cross product, get the hat vector, and cross
+        # #           it with the hat of each perpendicular vector. The next step is
+        # #           is to multiply this by the value of force and return this value. '''
 
-        else:
-            torque_A_val = dU_dChi
-            torque_C_val = torque_A_val
-            torque_A_hat = b_unit_vec
-            torque_C_hat = -b_unit_vec
-            torque_A_vec = torque_A_val * torque_A_hat
-            torque_C_vec = torque_C_val * torque_C_hat
+        # else:
+        #     torque_A_val = dU_dChi
+        #     torque_C_val = torque_A_val
+        #     torque_A_hat = b_unit_vec
+        #     torque_C_hat = -b_unit_vec
+        #     torque_A_vec = torque_A_val * torque_A_hat
+        #     torque_C_vec = torque_C_val * torque_C_hat
             
-            F_a_hat = cross_product(torque_A_vec, a_perp) / ( mag(torque_A_vec) * mag(a_perp))
-            F_a_val = math.fabs(torque_A_val) / mag(a_perp)
-            F_a_vec = F_a_val * F_a_hat
+        #     # F_a_hat = cross_product(torque_A_vec, a_perp) / ( mag(torque_A_vec) * mag(a_perp))
+        #     # F_a_val = math.fabs(torque_A_val) / mag(a_perp)
+        #     # F_a_vec = F_a_val * F_a_hat
+        #     F_a_vec = cross_product(torque_A_vec, a_perp) / ( a_perp[0]**2 +
+        #                                                       a_perp[1]**2 +
+        #                                                       a_perp[2]**2 )
+                
 
-            F_c_hat = cross_product(torque_C_vec, c_perp) / ( mag(torque_C_vec) * mag(c_perp))
-            F_c_val = math.fabs(torque_C_val) / mag(c_perp)
-            F_c_vec = F_c_val * F_c_hat
-
-            ''' Note: The list of forces that I am returning are for the first atom,
-                  second atom, third atom, and fourth atom. Also, the way the middle
-                  atom forces are being calculated is just through the summing the forces
-                  on the start and end atoms. Then we are applying  these forces to the
-                  middle two atoms. '''
-
+<<<<<<< HEAD
         self.first_atom.force += F_a_vec
         self.second_atom.force += -(F_a_vec + F_c_vec) * (self.second_atom.mass/(self.second_atom.mass + self.third_atom.mass))
         self.third_atom.force += -(F_a_vec + F_c_vec) * (self.third_atom.mass/(self.second_atom.mass + self.third_atom.mass))
         self.fourth_atom.force += F_c_vec
+=======
+        #     # F_c_hat = cross_product(torque_C_vec, c_perp) / ( mag(torque_C_vec) * mag(c_perp))
+        #     # F_c_val = math.fabs(torque_C_val) / mag(c_perp)
+        #     # F_c_vec = F_c_val * F_c_hat
+        #     F_c_vec = cross_product(torque_C_vec, c_perp) / ( c_perp[0]**2 +
+        #                                                       c_perp[1]**2 +
+        #                                                       c_perp[2]**2 )
+
+        #     ''' Note: The list of forces that I am returning are for the first atom,
+        #           second atom, third atom, and fourth atom. Also, the way the middle
+        #           atom forces are being calculated is just through the summing the forces
+        #           on the start and end atoms. Then we are applying  these forces to the
+        #           middle two atoms. '''
+
+        # self.first_atom.force += F_a_vec
+        # # self.second_atom.force += -F_c_vec
+        # self.second_atom.force += -(F_a_vec+F_c_vec) * ( self.second_atom.mass
+        #                                                  / ( self.second_atom.mass +
+        #                                                      self.third_atom.mass ) )
+        # # self.third_atom.force += -F_a_vec
+        # self.third_atom.force += -(F_a_vec+F_c_vec) * ( self.third_atom.mass
+        #                                                 / ( self.second_atom.mass +
+        #                                                     self.third_atom.mass ) )
+        # self.fourth_atom.force += F_c_vec
+>>>>>>> 1d72c3381455676d2a36a369a5d1838645b9efe0
         
         self.first_atom.counted = True
         self.second_atom.counted = True
@@ -2191,7 +2198,7 @@ def main():
     my_MD_simulation.vals = np.empty(7*n_atoms)
     
     integrator = ode(my_MD_simulation.ders)
-    integrator.set_integrator("vode", rtol = 1E-6)
+    integrator.set_integrator("vode", rtol = 1E-10)
 
     pindex = 0
     windex = 0
