@@ -1491,8 +1491,8 @@ class dihedral:
                   middle two atoms. '''
 
         self.first_atom.force += F_a_vec
-        self.second_atom.force += -F_a_vec
-        self.third_atom.force += -F_c_vec
+        self.second_atom.force += -(F_a_vec + F_c_vec) * (self.second_atom.mass/(self.second_atom.mass + self.third_atom.mass))
+        self.third_atom.force += -(F_a_vec + F_c_vec) * (self.third_atom.mass/(self.second_atom.mass + self.third_atom.mass))
         self.fourth_atom.force += F_c_vec
         
         self.first_atom.counted = True
@@ -2318,7 +2318,7 @@ def main():
     #     print(bangle)
                                          
     # my_MD_simulation.print_final_positions(name = str('Ethane_Equilibrium.txt'))
-    my_MD_simulation.graph_energy_conservation( name = str('Test_file_2.svg'), save_image = True)
+    my_MD_simulation.graph_energy_conservation( name = str('Test_file_3.svg'), save_image = True)
     
 if __name__ == '__main__':
     main()
