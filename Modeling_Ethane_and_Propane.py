@@ -1471,12 +1471,6 @@ class dihedral:
         #                                                       a_perp[2]**2 )
                 
 
-<<<<<<< HEAD
-        self.first_atom.force += F_a_vec
-        self.second_atom.force += -(F_a_vec + F_c_vec) * (self.second_atom.mass/(self.second_atom.mass + self.third_atom.mass))
-        self.third_atom.force += -(F_a_vec + F_c_vec) * (self.third_atom.mass/(self.second_atom.mass + self.third_atom.mass))
-        self.fourth_atom.force += F_c_vec
-=======
         #     # F_c_hat = cross_product(torque_C_vec, c_perp) / ( mag(torque_C_vec) * mag(c_perp))
         #     # F_c_val = math.fabs(torque_C_val) / mag(c_perp)
         #     # F_c_vec = F_c_val * F_c_hat
@@ -1500,7 +1494,6 @@ class dihedral:
         #                                                 / ( self.second_atom.mass +
         #                                                     self.third_atom.mass ) )
         # self.fourth_atom.force += F_c_vec
->>>>>>> 1d72c3381455676d2a36a369a5d1838645b9efe0
         
         self.first_atom.counted = True
         self.second_atom.counted = True
