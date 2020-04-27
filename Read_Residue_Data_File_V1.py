@@ -99,7 +99,7 @@ def read_txt_file(txt_file):
         last_value = values[6].strip('\n')
         values.pop(6)
         values.append(last_value)
-        atom = atom_builder(values[0], values[1], values[2], values[4], values[5], values[6])
+        atom = atom_builder(values[0], values[1], values[2], x = values[4], y = values[5], z = values[6])
 
 
     for line in rows[bonds_start: bonds_stop + 1]:
@@ -124,11 +124,53 @@ def read_txt_file(txt_file):
         bond = bond_builder(atom_1, atom_2, number_of_bonds)
 
 
+                    
+
+
 def main():
 
     file_name = str(sys.argv[1])
     
     read_txt_file(file_name)
+
+    translation_vec = np.array([0., 0., 0.])
+
+    for atom in atom_builder.all_atoms:
+        translation_vec += atom.pos
+
+    translation_vec /= len(atom_builder.all_atoms)
+        
+    for atom in atom_builder.all_atoms:
+        atom.pos -= translation_vec
+            
+    for vis_atom in visual.all_visual_atoms:
+        vis_atom.visual.pos = vis_atom.atom_object.pos
+
+    for bond in visual.all_visual_bonds:
+        bond.visual.pos = bond.bond_object.atom1.pos
+        bond.visual.axis = bond.bond_object.atom2.pos - bond.bond_object.atom1.pos
+
+    for atom in atom_builder.all_atoms:
+        if atom.atom_type == 'NH1':
+            amine_nitrogen = atom
+
+        if atom.atom_type == 'CT1':
+            central_carbon = atom
+
+    for bond in bond_builder.all_bonds:
+        if bond.atom1.atom_type or bond.atom2.atom_type  == 'C':
+            if bond.atom1.atom_type == 'O':
+                carbonyl_carbon = bond.atom2
+
+            if bond.atom2.atom_type == 'O':
+                carbonyl_carbon = bond.atom1
+        
+    vis.label(text = 'N', pos = amine_nitrogen.pos, height = 3, font = 'serif', color = [1., 0., 0.], box = False,
+                            units = "centidisplay", yoffset = 5, xoffset = 2)
+    vis.label(text = 'C', pos = central_carbon.pos, height = 3, font = 'serif', color = [0., 1., 0.], box = False,
+                                units = "centidisplay", yoffset = 5, xoffset = 2)
+    vis.label(text = 'C', pos = carbonyl_carbon.pos, height = 3, font = 'serif', color = [0., 0., 1.], box = False,
+                                    units = "centidisplay", yoffset = 5, xoffset = 2)
     
     display = True
 

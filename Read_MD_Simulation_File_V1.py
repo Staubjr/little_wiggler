@@ -123,6 +123,17 @@ def read_txt_file(txt_file):
 
         bond = bond_builder(atom_1, atom_2, number_of_bonds)
 
+        translation_vec = np.array([0., 0., 0.])
+
+        for atom in atom_builder.all_atoms:
+            translation_vec += atom.pos
+
+        translation_vec /= len(atom_builder.all_atoms)
+
+        for atom in atom_builder.all_atoms:
+            atom.pos -= translation_vec
+        
+
 
 def main():
 

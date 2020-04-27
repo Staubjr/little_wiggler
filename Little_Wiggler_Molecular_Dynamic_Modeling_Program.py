@@ -246,12 +246,12 @@ class simulation():
                 
                 for at in atom2.atoms_bonded_to:
                     if at == atom1:
-                        make_interaction = True
+                        make_interaction = False
 
                 for at in atom2.atoms_bonded_to:
                     for at_2 in at.atoms_bonded_to:
                         if at_2 == atom1:
-                            make_interaction = True
+                            make_interaction = False
 
                 if make_interaction == True:
                     lennard_jones_pair = lennard_jones(atom1, atom2)
@@ -549,21 +549,21 @@ class simulation():
         for mol in molecule.all_molecules:
             mol.get_all_forces()
 
-        # for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-        #     lennard_pair.atom1_force_counted = False
-        #     lennard_pair.atom2_force_counted = False
+        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+            lennard_pair.atom1_force_counted = False
+            lennard_pair.atom2_force_counted = False
 
-        # for lennard_pair in lennard_jones.all_lennard_jones_pairs:
-        #     if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
-        #         lennard_pair.lennard_jones_force()
+        for lennard_pair in lennard_jones.all_lennard_jones_pairs:
+            if lennard_pair.atom1_force_counted == False and lennard_pair.atom2_force_counted == False:
+                lennard_pair.lennard_jones_force()
 
-        # for sparky_pair in electrostatic.all_electrostatic_pairs:
-        #     sparky_pair.atom1_force_counted = False
-        #     sparky_pair.atom2_force_counted = False
+        for sparky_pair in electrostatic.all_electrostatic_pairs:
+            sparky_pair.atom1_force_counted = False
+            sparky_pair.atom2_force_counted = False
 
-        # for sparky_pair in electrostatic.all_electrostatic_pairs:
-        #     if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
-        #         sparky_pair.electrostatic_force()
+        for sparky_pair in electrostatic.all_electrostatic_pairs:
+            if sparky_pair.atom1_force_counted == False and sparky_pair.atom2_force_counted == False:
+                sparky_pair.electrostatic_force()
 
 
         """ Get the accelerations in dvals for any atom to go outside the specified boundary.
@@ -896,35 +896,24 @@ class molecule():
             if specific_dihedral.counted == False:
                 
                 specific_dihedral.dihedral_force()
-                
+
         """ Lennard Jones Forces :
             Not calculated here. Calculated in ders function.  """
-                
-        for specific_atom in self.atoms:
 
-            for specific_lennard_jones_pair in lennard_jones.all_lennard_jones_pairs:
+        # for specific_atom in self.atoms:
 
-                # if specific_lennard_jones_pair.atom1.atom_number == int(8):
-                #     if specific_lennard_jones_pair.atom2.atom_number == int(16):
-                #         print(specific_lennard_jones_pair.atom1.atom_number, specific_lennard_jones_pair.atom1.element_type, specific_lennard_jones_pair.atom2.atom_number, specific_lennard_jones_pair.atom2.element_type)
-                #         print(specific_lennard_jones_pair.lennard_jones_force())
-                #         print(specific_lennard_jones_pair.Epsilon)
-                #         print(specific_lennard_jones_pair.R_min)
-                #         print(mag(specific_lennard_jones_pair.atom1.pos - specific_lennard_jones_pair.atom2.pos))
-                #         print(specific_lennard_jones_pair.atom1.pos - specific_lennard_jones_pair.atom2.pos) 
-                        
-
-                if specific_atom == specific_lennard_jones_pair.atom1:
-                    forces = specific_lennard_jones_pair.lennard_jones_force()
-                    specific_lennard_jones_pair.atom1.force += forces[0]
-                    # specific_lennard_jones_pair.atom1_force_counted = True
+        #     for specific_lennard_jones_pair in lennard_jones.all_lennard_jones_pairs:
+        #         if specific_atom == specific_lennard_jones_pair.atom1:
+        #             forces = specific_lennard_jones_pair.lennard_jones_force()
+        #             specific_lennard_jones_pair.atom1.force += forces[0]
+        #             specific_lennard_jones_pair.atom1_force_counted = True
+        #             i += 1
                     
-                if specific_atom == specific_lennard_jones_pair.atom2:
-                    forces = specific_lennard_jones_pair.lennard_jones_force()
-                    specific_lennard_jones_pair.atom2.force += forces[1]
-                    # specific_lennard_jones_pair.atom2_force_counted = True
-
-            # sys.exit(20)
+        #         if specific_atom == specific_lennard_jones_pair.atom2:
+        #             forces = specific_lennard_jones_pair.lennard_jones_force()
+        #             specific_lennard_jones_pair.atom2.force += forces[1]
+        #             specific_lennard_jones_pair.atom2_force_counted = True
+        #             i += 1
 
         """ Electrostatic Potential Forces :
             Not calculated here. Calculated in ders function. """
@@ -1001,7 +990,7 @@ class bond:
                                                                               
         r_vec = (self.atom2.pos - self.atom1.pos)
         r_hat = r_vec/mag(r_vec)
-        dU = self.k_bond * (mag(r_vec) - self.E0_bond)
+        dU = 2 * self.k_bond * (mag(r_vec) - self.E0_bond)
         Force_1 = dU * r_hat
         Force_2 = -1 * Force_1
 
@@ -1167,7 +1156,7 @@ class bond_angle:
             theta = math.acos( tmpshit )
             
         """ Calculate the potential with respect to the theta """
-        dV_dtheta =  self.k_bond_angle * (theta - self.bond_angle0)
+        dV_dtheta =  2 * self.k_bond_angle * (theta - self.bond_angle0)
         
         """ Calculate the torques based on -dU/dTheta """
         Torque_1_val = -1*dV_dtheta
@@ -2112,7 +2101,7 @@ def main():
     c_1 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 1, y0 =  l0/2)
     c_2 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 2, y0 =  l0 * s20, x0 =  l0 * c20)
     c_3 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 3, y0 = -l0 * s20, x0 =  l0 * c20)
-    c_4 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 4, y0 = -l0/2)
+    c_4 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 4, y0 = -l0/2, z0 = -1.0)  #This is the one that is made z = -1.0
     c_5 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 5, y0 = -l0 * s20, x0 = -l0 * c20)
     c_6 = atom(element = 'carbon', element_type = 'CC32A', atom_number = 6, y0 =  l0 * s20, x0 = -l0 * c20)
     
@@ -2274,9 +2263,76 @@ def main():
                 
         t += dt
 
-        # vis.rate(30) 
+        # vis.rate(30)
 
-    my_MD_simulation.print_final_positions(name = str('Cyclohexane_Final_Structure'))
+    for bond in cyclohexane_1.bonds:
+        length = (mag(bond.atom1.pos - bond.atom2.pos))
+        print("{}-{}, length = {:.5f}, equilibrium length = {:.5f}".format(bond.atom1.element_type, bond.atom2.element_type, length, bond.E0_bond))
+
+    bond_list = []
+    bond_angle_print_list = []
+        
+    for bangle in cyclohexane_1.bond_angles:
+        bond1_vec = bangle.start_atom.pos - bangle.middle_atom.pos
+        bond2_vec = bangle.end_atom.pos - bangle.middle_atom.pos
+
+        try:
+            tmpshit = mag( cross_product(bond1_vec, bond2_vec) ) / ( mag(bond1_vec) * mag(bond2_vec) )
+            theta = math.asin (tmpshit) * 180/math.pi
+        
+        except ValueError as err:
+            
+            if tmpshit > 1 : tmpshit = 1
+            elif tmpshit < -1 : tmpshit = -1
+            else:
+                sys.stderr.write('This should never happen... \n')
+                raise Exception(err)
+            theta = math.asin( tmpshit ) * 180/math.pi
+            
+        try:
+            tmpshit = (bond1_vec * bond2_vec).sum() / ( mag(bond1_vec) * mag(bond2_vec) )
+            theta = math.acos( tmpshit ) * 180/math.pi
+            
+        except ValueError as err:
+            if tmpshit > 1 : tmpshit = 1
+            if tmpshit < -1 : tmpshit = -1
+            else:
+                raise Exception ('HOLY FUCK {} {} \n'.format(bond1_vec, bond2_vec))
+            theta = math.acos( tmpshit ) * 180/math.pi
+
+        single_bond_item = ["{}-{}-{}".format(bangle.start_atom.element_type, bangle.middle_atom.element_type, bangle.end_atom.element_type),
+                            "{:.5f}".format(theta), "{:.5f}".format(bangle.bond_angle0 * 180/math.pi) ]
+
+        bond_list.append(single_bond_item)
+
+        for bond in bond_list:
+            need = True
+            
+            for done_bond in bond_angle_print_list:
+                if bond[0] == done_bond[0]:
+                    need = False
+
+            bond_angle_list = []
+                    
+            if need == True:
+                for other_bond in bond_list:
+                    if other_bond[0] == bond[0]:
+                        bond_angle_list.append(bond[1])
+
+                numerator = 0
+
+                for thing in bond_angle_list:
+                    numerator += float(thing)
+            
+                    avg_ang = numerator/len(bond_angle_list)
+
+                bond_angle_print_list.append([bond[0], avg_ang, bond[2]])
+                
+    for bangle in bond_angle_print_list:
+        print(bangle)
+        
+
+    # my_MD_simulation.print_final_positions(name = str('Cyclohexane_Final_Structure_153LJ_Pairs_and_Electrostatic_Boat'))
     # my_MD_simulation.graph_energy_conservation( save_image = True)
     
 if __name__ == '__main__':
